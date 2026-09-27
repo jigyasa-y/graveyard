@@ -24,7 +24,7 @@ app.use("/api", inventoryRoutes);
 
   const testDB=async ()=>{
   try{
-    // const result=await db.query("SELECT*from items");
+    const result=await db.query("SELECT*from treasure");
     console.log("database is connected");
   } catch (error) {
     console.error("Error connecting to database:", error.message);
