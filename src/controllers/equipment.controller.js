@@ -19,10 +19,11 @@ export const createEquipments = async (req, res) => {
       const {
         name,
         description,
-        price
+        buy_price,
+        sell_price
       } = equipment;
       
-      if (!name || !description || !price === undefined) {
+      if (!name || !description || !buy_price ||!sell_price === undefined) {
         return res.status(400).json({
           message: "name, description and price are required"
         });
@@ -30,13 +31,14 @@ export const createEquipments = async (req, res) => {
 
       const result = await db.query(
         `INSERT INTO equipment
-        (name, description,price)
-        VALUES ($1, $2, $3)
+        (name, description,buy_price,sell_price)
+        VALUES ($1, $2, $3, $4)
         RETURNING *`,
         [
           name,
           description || null,
-          price
+          buy_price,
+          sell_price
         
         
         ]
