@@ -1,26 +1,88 @@
 import express from "express";
 import db from "../config/db.js";
 
-export const  createTreasure = async(req,res)=>{
+export const createTreasure = async (req, res) => {
 
-  try{
-    const {name, description, rarity, value}=req.body;
-    const result= await db.query("INSERT INTO treasure (name, description, rarity, value) VALUES ($1, $2, $3, $4) RETURNING *", [name, description, rarity, value]);
-    res.status(201).json(result.rows[0]);
+    try {
 
+        const { treasures } = req.body;
 
-
-  }
-  catch(error){
-
-    res.status(500).json({message:"Error creating treasure",error:error.message});
-  }
+        if (!treasures || !Array.isArray(treasures)) {
+            return res.status(400).json({
+                message: "Treasures array is required"
+            });
+        }
 
 
+        const insertedTreasures = [];
+
+
+        for (const treasure of treasures) {
+
+            const {
+                name,
+                description,
+                rarity,
+                value
+            } = treasure;
+
+
+            console.log(
+                "Inserting:",
+                name,
+                description,
+                rarity,
+                value
+            );
+
+
+            const result = await db.query(
+                `
+                INSERT INTO treasure
+                (name, description, rarity, value)
+                VALUES ($1, $2, $3, $4)
+                RETURNING *
+                `,
+                [
+                    name,
+                    description,
+                    rarity,
+                    value
+                ]
+            );
+
+
+            insertedTreasures.push(
+                result.rows[0]
+            );
+        }
+
+
+        res.status(201).json({
+            message: "Treasures inserted successfully",
+            treasures: insertedTreasures
+        });
+
+    }
+    catch (error) {
+
+        console.log(
+            "Error in create treasure:",
+            error.message
+        );
+
+        res.status(500).json({
+            message: "Error creating treasures",
+            error: error.message
+        });
+    }
+};
 
 
 
-}
+
+
+
 
 export const getTreasure = async(req,res)=>{
 
