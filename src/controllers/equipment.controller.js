@@ -1,21 +1,66 @@
 import db from "../config/db.js";
 import express from "express";
 
-export const createEquipments =  async(req, res)=>{
+export const createEquipments = async (req, res) => {
+  try {
+    const equipments = Array.isArray(req.body)
+      ? req.body
+      : [req.body];
 
-  try{
+    if (equipments.length === 0) {
+      return res.status(400).json({
+        message: "At least one equipment is required"
+      });
+    }
 
-    const {name, description, price} =req.body;
+    const createdEquipments = [];
 
-    const result = await db.query("INSERT INTO equipment (name, description, price) VALUES ($1, $2, $3) RETURNING *", [name, description, price]);
-    res.status(201).json(result.rows[0]);
+    for (const equipment of equipments) {
+      const {
+        name,
+        description,
+        buy_price,
+        sell_price
+      } = equipment;
+      
+      if (!name || !description || !buy_price ||!sell_price === undefined) {
+        return res.status(400).json({
+          message: "name, description and price are required"
+        });
+      }
 
+      const result = await db.query(
+        `INSERT INTO equipment
+        (name, description,buy_price,sell_price)
+        VALUES ($1, $2, $3, $4)
+        RETURNING *`,
+        [
+          name,
+          description || null,
+          buy_price,
+          sell_price
+        
+        
+        ]
+      );
 
+      createdEquipments.push(result.rows[0]);
+    }
+
+    res.status(201).json({
+      message: "Equipment(s) created successfully",
+      equipments: createdEquipments
+    });
+
+  } catch (error) {
+    console.error("Create equipment error:", error);
+
+    res.status(500).json({
+      message: "Error creating equipment",
+      error: error.message
+    });
   }
-  catch(error){
-    res.status(500).json({message:"Error creating equipment",error:error.message});
-  }
-}
+};
 
 export const getEquipments = async(req,res)=>{
 

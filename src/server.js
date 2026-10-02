@@ -5,6 +5,7 @@ import cors from "cors";
 import treasureRoutes from "./routes/treasure.route.js";
 import inventoryRoutes from "./routes/inventory.route.js";
 import equipmentRoutes from "./routes/equipment.route.js";
+import shopRoutes from "./routes/shop.route.js";
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ const PORT = process.env.PORT;
 app.use("/api", treasureRoutes);
 app.use("/api",  equipmentRoutes);
 app.use("/api", inventoryRoutes);
+app.use("/api", shopRoutes)
 
 
 

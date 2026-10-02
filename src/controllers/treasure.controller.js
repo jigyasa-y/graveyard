@@ -89,9 +89,6 @@ export const getTreasure = async(req,res)=>{
 try{
   const result = await db.query("SELECT * FROM treasure");
   res.status(200).json(result.rows);
-
-
-
 }
 catch(error){
   res.status(500).json({message:"Error fetching treasures",error:error.message});
@@ -99,25 +96,91 @@ catch(error){
 
 }
 }
+export const getTreasureById = async (req, res) => {
+  try {
+    const { id } = req.params;
 
-export const getTreasureById = async(req,res)=>{
+    // Get player's stored treasure item_ids
+    const inventoryResult = await db.query(
+      `SELECT treasure
+       FROM player_inventory
+       WHERE id = $1`,
+      [id]
+    );
 
-  try{
-    const {id}=req.params;
-    const result= await db.query("select * from treasure where id=$1",[id]);
-    if(result.rows.length===0){
-      return res.status(404).json({message:"Treasure not found"});
+    if (inventoryResult.rows.length === 0) {
+      return res.status(404).json({
+        message: "Player inventory not found"
+      });
     }
-    res.status(200).json(result.rows[0]);
 
+    const treasureArray =
+      inventoryResult.rows[0].treasure || [];
+
+    console.log("Player treasure array:", treasureArray);
+
+    if (treasureArray.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    // Convert values to strings because treasure.item_id is VARCHAR
+    const itemIds = treasureArray.map(itemId =>
+      String(itemId)
+    );
+
+    // Count each item_id
+    const quantityMap = {};
+
+    for (const itemId of itemIds) {
+      quantityMap[itemId] =
+        (quantityMap[itemId] || 0) + 1;
+    }
+
+    console.log("Quantity map:", quantityMap);
+
+    // Fetch treasure details
+    const treasureResult = await db.query(
+      `SELECT
+          id,
+          item_id,
+          name,
+          description,
+          rarity,
+          value
+       FROM treasure
+       WHERE item_id = ANY($1::text[])`,
+      [itemIds]
+    );
+
+    // Add quantity to response
+    const treasures = treasureResult.rows.map(
+      treasure => ({
+        ...treasure,
+        quantity:
+          quantityMap[String(treasure.item_id)] || 0
+      })
+    );
+
+    console.log(
+      "Player treasures:",
+      treasures
+    );
+
+    res.status(200).json(treasures);
+
+  } catch (error) {
+    console.error(
+      "Error fetching player treasures:",
+      error
+    );
+
+    res.status(500).json({
+      message: "Error fetching player treasures",
+      error: error.message
+    });
   }
-  catch(error){
-    res.status(500).json({message:"Error fetching treasure by id",error:error.message});
-  }
+};
 
-
-
-}
 
 export const updateTreasure = async(req,res)=>{
 
@@ -125,9 +188,8 @@ export const updateTreasure = async(req,res)=>{
     const {id}=req.params;
     const {name, description, rarity, value}=req.body;
     const result= await  db.query("update treasure set name =$1, description=$2, rarity=$3, value=$4 where id=$5 returning *",[name, description, rarity, value, id]);
-    if(result.rows.length===0){
-      return res.status(404).json({message:"Treasure not found"});
-    }
+    res.status(200).json(result.rows[0]);
+    
 
 
   }
